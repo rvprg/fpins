@@ -85,6 +85,36 @@ object Chapter7 extends App {
     // map(map(y)(g))(f) == map(y)(f compose g)
     // map(map(y)(id))(f) == map(y)(f compose id)
     // map(y)(f) = map(y)(f)
+
+    // 7.8
+    // If we supply a service executor with one thread in the pool, fork() will deadlock.
+
+    // 7.9
+    // Just call fork() enough times to saturate the threadpool.
+
+    // 7.10
+    // Skip
+
+    // 7.11
+    def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = es => choices(run(es)(n).get)(es)
+
+    def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      choiceN(map(cond)(x => if (x) 0 else 1))(List(t, f))
+
+    // 7.12
+    // Almost identical to 7.11
+
+    // 7.13
+    def chooser[A, B](pa: Par[A])(choices: A => Par[B]): Par[B] = es => choices(pa(es).get())(es)
+
+    // choice and choiceN via chooser are trivial
+
+    // 7.14
+    def join[A](a: Par[Par[A]]): Par[A] = es => (a(es).get()) (es)
+
+    def flatMap[A, B](a: Par[A])(f: A => Par[B]): Par[B] = join(map(a)(f))
+
+    def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] = flatMap(a)(identity)
   }
 
   object Examples {
