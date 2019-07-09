@@ -1,5 +1,4 @@
 import Chapter6._
-import java.lang.System._
 
 object Chapter8 extends App {
 
@@ -18,25 +17,39 @@ object Chapter8 extends App {
 
   }
 
-  case class Gen[+A](sample: State[RNG, A]) {
+  object Gen {
     // 8.4
     def choose(start: Int, stopExclusive: Int): Gen[Int] = {
       Gen[Int](State(RNG.nonNegativeLessThan(stopExclusive - start)).map(v => v + start))
     }
 
+    def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = Gen(State.sequence(List.fill(n)(g.sample)))
+
+    // 8.11
+    // 8.12
+    def listOf[A](g: Gen[A]): SGen[List[A]] = SGen {
+      s => listOfN(s, g)
+    }
+
+    // 8.13
+    def listOf1[A](g: Gen[A]): SGen[List[A]] = SGen {
+      s => listOfN(if (s > 0) s else 1, g)
+    }
+  }
+
+  case class Gen[+A](sample: State[RNG, A]) {
     // 8.5
     def unit[A](a: => A): Gen[A] = Gen(State(s => (a, s)))
 
     def boolean: Gen[Boolean] = Gen(State(RNG.nonNegativeLessThan(2)).map(_ == 1))
 
-    def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = Gen(State.sequence(List.fill(n)(g.sample)))
 
     // 8.6
     def flatMap[B](f: A => Gen[B]): Gen[B] =
       Gen(sample.flatMap(x => f(x).sample))
 
     def listOfN(size: Gen[Int]): Gen[List[A]] =
-      size.flatMap(n => listOfN(n, this))
+      size.flatMap(n => Gen.listOfN(n, this))
 
     // 8.7
     def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
@@ -52,17 +65,6 @@ object Chapter8 extends App {
     // 8.10
     def unsized: SGen[A] = SGen {
       s => this
-    }
-
-    // 8.11
-    // 8.12
-    def listOf[A](g: Gen[A]): SGen[List[A]] = SGen {
-      s => listOfN(s, g)
-    }
-
-    // 8.13
-    def listOf1[A](g: Gen[A]): SGen[List[A]] = SGen {
-      s => g.listOfN(if (s > 0) s else 1)
     }
   }
 
@@ -84,6 +86,23 @@ object Chapter8 extends App {
   }
 
   case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
+    // 8.9
+    def &&(p: Prop): Prop = Prop {
+      (max, n, rng) => {
+        val resLeft = this.run(max, n, rng)
+        if (resLeft.isFalsified) resLeft else p.run(max, n, rng)
+      }
+    }
+
+    def ||(p: Prop): Prop = Prop {
+      (max, n, rng) => {
+        val resLeft = this.run(max, n, rng)
+        if (resLeft.isFalsified) p.run(max, n, rng) else resLeft
+      }
+    }
+  }
+
+  object Prop {
     def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
       (_, n, rng) =>
         randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
@@ -116,23 +135,6 @@ object Chapter8 extends App {
         s"generated an exception: ${e.getMessage}\n" +
         s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
-    // 8.9
-    def &&(p: Prop): Prop = Prop {
-      (max, n, rng) => {
-        val resLeft = this.run(max, n, rng)
-        if (resLeft.isFalsified) resLeft else p.run(max, n, rng)
-      }
-    }
-
-    def ||(p: Prop): Prop = Prop {
-      (max, n, rng) => {
-        val resLeft = this.run(max, n, rng)
-        if (resLeft.isFalsified) p.run(max, n, rng) else resLeft
-      }
-    }
-  }
-
-  object Prop {
     def run(p: Prop, maxSize: Int = 100, testCases: TestCases = 100, rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
       p.run(maxSize, testCases, rng) match {
         case Falsified(msg, n) =>
@@ -142,5 +144,9 @@ object Chapter8 extends App {
       }
   }
 
-  println("hello")
+  // 8.14
+  val p = Prop.forAll(Gen.listOfN(10, Gen.choose(-10, 10))) { p =>
+    p.sorted.foldRight((Int.MinValue, true): (Int, Boolean))((i, b) => (i, i <= b._1))._2
+  }
+  Prop.run(p)
 }
