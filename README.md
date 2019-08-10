@@ -8,3 +8,5 @@ My answers to the exercises from the "Functional Programming in Scala" book.
 6. Purely Functional State
 7. Purely Functional Parallelism
 8. Property-Based Testing
+9. Parser Combinators
+10. Monoids
