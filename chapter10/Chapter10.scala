@@ -71,13 +71,18 @@ object Chapter10 extends App {
     def trimMonoid(s: String): Monoid[String] = ???
 
     def concatenate[A](as: List[A], m: Monoid[A]): A =
-      ???
+      as.foldRight(m.zero)(m.op)
 
+    // 10.5
     def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-      ???
+      as.map(f).foldRight(m.zero)(m.op)
 
+    def foldMap1[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+      as.foldRight(m.zero)((x, y) => m.op(f(x), y))
+
+    // 10.6
     def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-      ???
+      foldMap(as, endoMonoid[B])(f.curried)(z)
 
     def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
       ???
