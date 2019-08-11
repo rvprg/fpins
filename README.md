@@ -2,6 +2,8 @@ My answers to the exercises from the "Functional Programming in Scala" book.
 
 # Chapters
 
+1. What is Functional Programming?
+2. Functional Design and Combinator Libraries
 3. Functional Data Structures
 4. Handling Errors Without Exceptions
 5. Strictness and Laziness
