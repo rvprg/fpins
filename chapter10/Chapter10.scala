@@ -87,8 +87,17 @@ object Chapter10 extends App {
     def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
       ???
 
-    def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-      ???
+    // 10.7
+    def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+      if (as.isEmpty) {
+        m.zero
+      } else if (as.size == 1) {
+        f(as(0))
+      } else {
+        val halfs = as.splitAt(as.size / 2)
+        m.op(foldMapV(halfs._1, m)(f), foldMapV(halfs._2, m)(f))
+      }
+    }
 
     def ordered(ints: IndexedSeq[Int]): Boolean =
       ???
@@ -99,11 +108,14 @@ object Chapter10 extends App {
 
     case class Part(lStub: String, words: Int, rStub: String) extends WC
 
-    def par[A](m: Monoid[A]): Monoid[Par[A]] =
-      ???
+    // 10.8
+    def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
+      override def op(a1: Par[A], a2: Par[A]): Par[A] = Par.map2(a1, a2)((x, y) => m.op(x, y))
+      override def zero: Par[A] = Par.unit(m.zero)
+    }
 
     def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
-      ???
+      foldMapV(v, par(m))(Par.asyncF(f))
 
     val wcMonoid: Monoid[WC] = ???
 
