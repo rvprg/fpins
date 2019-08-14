@@ -1,8 +1,8 @@
 
+import Chapter10.Monoid.ordered
 import Chapter7.Par.Par
 
-import language.higherKinds
-import scala.sys.Prop
+import scala.language.higherKinds
 
 object Chapter10 extends App {
 
@@ -57,8 +57,8 @@ object Chapter10 extends App {
       override def zero: A => A = identity
     }
 
-    import Chapter8._;
     import Chapter7._
+    import Chapter8._
 
     // 10.4
     def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Chapter8.Prop =
@@ -99,8 +99,24 @@ object Chapter10 extends App {
       }
     }
 
-    def ordered(ints: IndexedSeq[Int]): Boolean =
-      ???
+    // 10.9
+    def ordered(ints: IndexedSeq[Int]): Boolean = {
+      if (ints.size <= 1) {
+        return true
+      }
+      def increasing(p: (Int, Int)) = p._1 <= p._2
+      def chainer: Monoid[Option[(Int, Int)]] = new Monoid[Option[(Int, Int)]] {
+        override def op(a1: Option[(Int, Int)], a2: Option[(Int, Int)]): Option[(Int, Int)] = (a1, a2) match {
+          case (Some(a1), Some(a2)) => if (increasing(a1) && increasing(a2) && a1._2 == a2._1) Some((a1._1, a2._2)) else None
+          case (Some(a1), None) => Some(a1)
+          case (None, Some(a2)) => Some(a2)
+        }
+        override def zero: Option[(Int, Int)] = None
+      }
+
+      val v = foldMapV(ints.zip(ints.tail), chainer)(x => Some(x))
+      v != None && increasing(v.get) && (v.get == (ints(0), ints.last))
+    }
 
     sealed trait WC
 
@@ -117,10 +133,18 @@ object Chapter10 extends App {
     def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
       foldMapV(v, par(m))(Par.asyncF(f))
 
-    val wcMonoid: Monoid[WC] = ???
+    val wcMonoid: Monoid[WC] = new Monoid[WC] {
+      override def op(a1: WC, a2: WC): WC = (a1, a2) match {
+        case (Stub(l), Stub(r)) => Stub(l+r)
+        case (Stub(p), Part(l, w, r)) => Part(p + l, w, r)
+        case (Part(l, w, r), Stub(s)) => Part(l, w, r + s)
+        case (Part(l, w1, _), Part(_, w2, r)) => Part(l, w1 + w2 + 1, r)
+      }
+      override def zero: WC = Stub("")
+    }
 
+/*
     def count(s: String): Int = ???
-
     def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
       ???
 
@@ -131,12 +155,10 @@ object Chapter10 extends App {
       ???
 
     def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-      ???
+      ???*/
   }
 
   trait Foldable[F[_]] {
-
-    import Monoid._
 
     def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
       ???
