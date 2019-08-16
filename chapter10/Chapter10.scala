@@ -133,18 +133,37 @@ object Chapter10 extends App {
     def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
       foldMapV(v, par(m))(Par.asyncF(f))
 
+    // 10.10
     val wcMonoid: Monoid[WC] = new Monoid[WC] {
       override def op(a1: WC, a2: WC): WC = (a1, a2) match {
         case (Stub(l), Stub(r)) => Stub(l+r)
         case (Stub(p), Part(l, w, r)) => Part(p + l, w, r)
         case (Part(l, w, r), Stub(s)) => Part(l, w, r + s)
+        case (Part(l, w1, ""), Part("", w2, r)) => Part(l, w1 + w2, r)
         case (Part(l, w1, _), Part(_, w2, r)) => Part(l, w1 + w2 + 1, r)
       }
       override def zero: WC = Stub("")
     }
 
-/*
-    def count(s: String): Int = ???
+    // 10.11
+    def count(s: String): Int = {
+      def calc(s: String): WC = {
+        if (s == " ") {
+          Part("", 0, "")
+        } else if (s.length > 1) {
+          val (l, r) = s.splitAt(s.size/2)
+          wcMonoid.op(calc(l), calc(r))
+        } else {
+          Stub(s)
+        }
+      }
+      def asWordCount(s: String) = if (s.isEmpty) 0 else 1
+      calc(s) match {
+        case Stub(l) => asWordCount(s)
+        case Part(l, w, r) => w + asWordCount(l) + asWordCount(r)
+      }
+    }
+    /*
     def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
       ???
 
@@ -157,6 +176,8 @@ object Chapter10 extends App {
     def bag[A](as: IndexedSeq[A]): Map[A, Int] =
       ???*/
   }
+
+  println(Monoid.count("test test lreas a d ff"))
 
   trait Foldable[F[_]] {
 
