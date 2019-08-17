@@ -177,8 +177,6 @@ object Chapter10 extends App {
       ???*/
   }
 
-  println(Monoid.count("test test lreas a d ff"))
-
   trait Foldable[F[_]] {
 
     def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
@@ -197,34 +195,35 @@ object Chapter10 extends App {
       ???
   }
 
+  // 10.12
   object ListFoldable extends Foldable[List] {
     override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
-      ???
+      as.foldRight(z)(f)
 
     override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
-      ???
+      as.foldLeft(z)(f)
 
     override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
-      ???
+      foldLeft(as)(mb.zero)((b, a) => mb.op(b, f(a)))
   }
 
   object IndexedSeqFoldable extends Foldable[IndexedSeq] {
     override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-      ???
+      as.foldRight(z)(f)
 
     override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
-      ???
+      as.foldLeft(z)(f)
 
     override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
-      ???
+      foldLeft(as)(mb.zero)((b, a) => mb.op(b, f(a)))
   }
 
   object StreamFoldable extends Foldable[Stream] {
     override def foldRight[A, B](as: Stream[A])(z: B)(f: (A, B) => B) =
-      ???
+      as.foldRight(z)(f)
 
     override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) =
-      ???
+      as.foldLeft(z)(f)
   }
 
   sealed trait Tree[+A]
