@@ -12,3 +12,4 @@ My answers to the exercises from the "Functional Programming in Scala" book.
 8. Property-Based Testing
 9. Parser Combinators
 10. Monoids
+11. Monads
