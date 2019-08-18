@@ -191,8 +191,9 @@ object Chapter10 extends App {
     def concatenate[A](as: F[A])(m: Monoid[A]): A =
       ???
 
+    // 10.15
     def toList[A](as: F[A]): List[A] =
-      ???
+      foldRight(as)(List[A]())((v, l) => v :: l)
   }
 
   // 10.12
@@ -232,25 +233,39 @@ object Chapter10 extends App {
 
   case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
+  // 10.13
   object TreeFoldable extends Foldable[Tree] {
-    override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
-      ???
+    override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B = as match {
+      case Leaf(v) => f(v)
+      case Branch(left, right) => mb.op(foldMap(left)(f)(mb), foldMap(right)(f)(mb))
+    }
 
-    override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) =
-      ???
+    override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) = as match {
+      case Leaf(v) => f(z, v)
+      case Branch(left, right) => foldLeft(right)(foldLeft(left)(z)(f))(f)
+    }
 
-    override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
-      ???
+    override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =as match {
+      case Leaf(v) => f(v, z)
+      case Branch(left, right) => foldRight(left)(foldRight(right)(z)(f))(f)
+    }
   }
 
+  // 10.14
   object OptionFoldable extends Foldable[Option] {
-    override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-      ???
+    override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B = as match {
+      case Some(v) => f(v)
+      case None => mb.zero
+    }
 
-    override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
-      ???
+    override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) = as match {
+      case Some(v) => f(z, v)
+      case None => z
+    }
 
-    override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
-      ???
+    override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) = as match {
+      case Some(v) => f(v, z)
+      case None => z
+    }
   }
 }
