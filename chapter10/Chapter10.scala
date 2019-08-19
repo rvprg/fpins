@@ -1,5 +1,4 @@
 
-import Chapter10.Monoid.ordered
 import Chapter7.Par.Par
 
 import scala.language.higherKinds
@@ -163,18 +162,36 @@ object Chapter10 extends App {
         case Part(l, w, r) => w + asWordCount(l) + asWordCount(r)
       }
     }
-    /*
-    def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-      ???
 
-    def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
-      ???
+    // 10.16
+    def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] = new Monoid[(A, B)] {
+      // (a b) op ((c d) op (e f)) = (a b) op (ce, df) = (ace, bdf)
+      // ((a b) op (c d)) op (e f) = (ac bd) op (e, f) = (ace, bdf)
+      override def op(a1: (A, B), a2: (A, B)): (A, B) = (A.op(a1._1, a2._1), B.op(a1._2, a2._2))
+      // (a b) op (azero, bzero) = (aazero bbzero) = (a b)
+      override def zero: (A, B) = (A.zero, B.zero)
+    }
 
-    def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
-      ???
+    // 10.17
+    def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] = new Monoid[A => B] {
+      override def op(a1: A => B, a2: A => B): A => B = x => B.op(a1(x), a2(x))
+      override def zero: A => B = x => B.zero
+    }
 
+
+    def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K, V]] = new Monoid[Map[K, V]] {
+      def zero = Map[K,V]()
+      def op(a: Map[K, V], b: Map[K, V]) =
+        (a.keySet ++ b.keySet).foldLeft(zero) { (acc,k) =>
+          acc.updated(k, V.op(a.getOrElse(k, V.zero),
+            b.getOrElse(k, V.zero)))
+        }
+    }
+
+    // 10.18
     def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-      ???*/
+      foldMapV(as, mapMergeMonoid[A, Int](intAddition))((x: A) => Map(x -> 1))
+
   }
 
   trait Foldable[F[_]] {
