@@ -1,5 +1,7 @@
 My answers to the exercises from the "Functional Programming in Scala" book.
 
+The answers by the authors of the book can be found at: https://github.com/fpinscala/fpinscala
+
 # Chapters
 
 1. What is Functional Programming?
