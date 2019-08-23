@@ -43,9 +43,23 @@ object Chapter11 extends App {
     def traverse[A, B](la: List[A])(f: A => M[B]): M[List[B]] =
       la.foldRight(unit(List[B]()))((l, x) => map2(f(l), x)((a, b) => a :: b))
 
-    def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
+    // 10.4
+    def replicateM[A](n: Int, ma: M[A]): M[List[A]] =
+      sequence(List.fill(n)(ma))
 
-    def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] = ???
+    // 10.5
+    // For List it would return a list of lists
+    // For Option is would return a list of either Somes or Nones.
+
+    // pre 10.6
+    def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
+      x => flatMap(f(x))(b => g(b))
+
+    // 10.6
+    def filterM[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] = ms match {
+      case h :: t => flatMap(f(h))(x => if (x) map(filterM(t)(f))(h :: _) else filterM(t)(f))
+      case Nil => unit(Nil)
+    }
 
     // Implement in terms of `compose`:
     def _flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
@@ -118,4 +132,5 @@ object Chapter11 extends App {
       override def flatMap[A, B](st: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] = ???
     }
   }
+
 }
