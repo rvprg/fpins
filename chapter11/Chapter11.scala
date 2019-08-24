@@ -36,38 +36,50 @@ object Chapter11 extends App {
     def map2[A, B, C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
       flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-    // 10.3
+    // 11.3
     def sequence[A](lma: List[M[A]]): M[List[A]] =
       lma.foldRight(unit(List[A]()))((l, x) => map2(l, x)((a, b) => a :: b))
 
     def traverse[A, B](la: List[A])(f: A => M[B]): M[List[B]] =
       la.foldRight(unit(List[B]()))((l, x) => map2(f(l), x)((a, b) => a :: b))
 
-    // 10.4
+    // 11.4
     def replicateM[A](n: Int, ma: M[A]): M[List[A]] =
       sequence(List.fill(n)(ma))
 
-    // 10.5
+    // 11.5
     // For List it would return a list of lists
     // For Option is would return a list of either Somes or Nones.
 
-    // pre 10.6
-    def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
-      x => flatMap(f(x))(b => g(b))
-
-    // 10.6
+    // 11.6
     def filterM[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] = ms match {
       case h :: t => flatMap(f(h))(x => if (x) map(filterM(t)(f))(h :: _) else filterM(t)(f))
       case Nil => unit(Nil)
     }
 
-    // Implement in terms of `compose`:
-    def _flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
+    // 11.7
+    def compose[A, B, C](f: A => M[B], g: B => M[C]): A => M[C] =
+      x => flatMap(f(x))(b => g(b))
 
-    def join[A](mma: M[M[A]]): M[A] = ???
+    // 11.8
+    def _flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] =
+      compose[M[A], A, B](identity, f)(ma)
 
-    // Implement in terms of `join`:
-    def __flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] = ???
+    // 11.9
+
+    // 11.10
+
+    // 11.11
+    // flatMap(Some(v))(unit) = unit(v) = Some(v)
+    // flatMap(unit(Some(v))(f) = flatMap(Some(Some(v))(f) = f(Some(v))
+
+    // 11.12
+    def join[A](mma: M[M[A]]): M[A] =
+      flatMap(mma)(identity)
+
+    // 11.13
+    def __flatMap[A, B](ma: M[A])(f: A => M[B]): M[B] =
+      join(map(ma)(f))
   }
 
   case class Reader[R, A](run: R => A)
