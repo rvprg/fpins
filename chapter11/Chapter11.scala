@@ -1,4 +1,5 @@
 
+import Chapter6.State
 import Chapter7.Par
 import Chapter7.Par.Par
 import Chapter8.Gen
@@ -82,7 +83,6 @@ object Chapter11 extends App {
       join(map(ma)(f))
   }
 
-  case class Reader[R, A](run: R => A)
 
   object Monad {
     val genMonad = new Monad[Gen] {
@@ -123,25 +123,35 @@ object Chapter11 extends App {
       override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma.flatMap(f)
     }
 
-
-    def stateMonad[S] = ???
-
-    val idMonad: Monad[Id] = ???
+    def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
+      def unit[A](a: => A): State[S, A] = State(s => (a, s))
+      def flatMap[A, B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
+        st flatMap f
+    }
 
     def readerMonad[R] = ???
   }
 
+  // 11.17
   case class Id[A](value: A) {
-    def map[B](f: A => B): Id[B] = ???
-
-    def flatMap[B](f: A => Id[B]): Id[B] = ???
+    def map[B](f: A => B): Id[B] = Id(f(value))
+    def flatMap[B](f: A => Id[B]): Id[B] = f(value)
   }
+
+  val idMonad = new Monad[Id] {
+    override def unit[A](a: => A): Id[A] = Id(a)
+    override def flatMap[A, B](ma: Id[A])(f: A => Id[B]): Id[B] = ma.flatMap(f)
+  }
+
+  // 11.20
+  case class Reader[R, A](run: R => A)
 
   object Reader {
     def readerMonad[R] = new Monad[({type f[x] = Reader[R, x]})#f] {
-      def unit[A](a: => A): Reader[R, A] = ???
-
-      override def flatMap[A, B](st: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] = ???
+      override def unit[A](a: => A): Reader[R, A] = Reader(_ => a)
+      override def flatMap[A, B](st: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] = new Reader(
+        x => f(st.run(x)).run(x)
+      )
     }
   }
 
