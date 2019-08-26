@@ -15,3 +15,4 @@ The answers by the authors of the book can be found at: https://github.com/fpins
 9. Parser Combinators
 10. Monoids
 11. Monads
+12. Applicatives and Traversable Functors
