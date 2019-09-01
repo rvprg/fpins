@@ -46,9 +46,24 @@ object Chapter12 extends App {
     def factor[A, B](fa: F[A], fb: F[B]): F[(A, B)] = ???
 
     // 12.8
-    def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
+    def product[G[_]](G: Applicative[G]) = {
+      val self = this
+      new Applicative[({type f[x] = (F[x], G[x])})#f] {
+        override def unit[A](a: => A): (F[A], G[A]) = (self.unit(a), G.unit(a))
+        override def apply[A, B](fab: (F[A => B], G[A => B]))(fa: (F[A], G[A])): (F[B], G[B]) =
+          (self.apply(fab._1)(fa._1), G.apply(fab._2)(fa._2))
+      }
+    }
 
-    def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = ???
+    // 12.9
+    def compose[G[_]](G: Applicative[G]) = {
+      val self = this
+      new Applicative[({type f[x] = F[G[x]]})#f] {
+        override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+        override def apply[A, B](fab: F[G[A => B]])(fa: F[G[A]]): F[G[B]] =
+          self.map2(fab, fa)((f, a) => G.map2(f, a)((ff, aa) => ff(aa)))
+      }
+    }
 
     def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] = ???
   }
