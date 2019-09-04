@@ -65,7 +65,9 @@ object Chapter12 extends App {
       }
     }
 
-    def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] = ???
+    // 12.12
+    def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] =
+      ofa.foldRight(unit(Map[K, V]()))((e, m) => map2(e._2, m)((v, m) => m + (e._1 -> v)))
   }
 
   case class Tree[+A](head: A, tail: List[Tree[A]])
