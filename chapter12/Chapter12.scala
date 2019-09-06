@@ -159,7 +159,7 @@ object Chapter12 extends App {
     def sequence[G[_] : Applicative, A](fma: F[G[A]]): G[F[A]] =
       traverse(fma)(ma => ma)
 
-    def map[A, B](fa: F[A])(f: A => B): F[B] = ???
+    def map[A, B](fa: F[A])(f: A => B): F[B] = map(fa)(f)
 
     import Applicative._
     import StateUtil._
@@ -195,11 +195,24 @@ object Chapter12 extends App {
   }
 
   object Traverse {
-    val listTraverse = ???
 
-    val optionTraverse = ???
+    // 12.13
+    val listTraverse = new Traverse[List] {
+      def traverse[G[_] : Applicative, A, B](fa: List[A])(f: A => G[B])(implicit G: Applicative[G]): G[List[B]] =
+        fa.foldRight(G.unit(List[B]()))((v, l) => G.map2(f(v), l)(_ :: _))
+    }
 
-    val treeTraverse = ???
+    val optionTraverse = new Traverse[Option] {
+      def traverse[G[_] : Applicative, A, B](fa: Option[A])(f: A => G[B])(implicit G: Applicative[G]): G[Option[B]] = fa match {
+        case Some(v) => G.map(f(v))(x => Some(x))
+        case None => G.unit(None)
+      }
+    }
+
+    val treeTraverse = new Traverse[Tree] {
+      def traverse[G[_] : Applicative, A, B](fa: Tree[A])(f: A => G[B])(implicit G: Applicative[G]): G[Tree[B]] =
+        G.map2(f(fa.head), listTraverse.traverse(fa.tail)(x => traverse(x)(f)))((h, t) => Tree(h, t))
+    }
   }
 
   // The `get` and `set` functions on `State` are used above,
