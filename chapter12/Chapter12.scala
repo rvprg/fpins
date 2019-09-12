@@ -1,12 +1,13 @@
 
 import Chapter10.{Foldable, Monoid}
-import Chapter11.Functor
+import Chapter11.{Functor}
 import Chapter6.State
 
 import language.higherKinds
 import language.implicitConversions
 
 object Chapter12 extends App {
+
   trait Applicative[F[_]] extends Functor[F] {
     // 12.1
     def sequence[A](fas: List[F[A]]): F[List[A]] =
@@ -50,6 +51,7 @@ object Chapter12 extends App {
       val self = this
       new Applicative[({type f[x] = (F[x], G[x])})#f] {
         override def unit[A](a: => A): (F[A], G[A]) = (self.unit(a), G.unit(a))
+
         override def apply[A, B](fab: (F[A => B], G[A => B]))(fa: (F[A], G[A])): (F[B], G[B]) =
           (self.apply(fab._1)(fa._1), G.apply(fab._2)(fa._2))
       }
@@ -60,6 +62,7 @@ object Chapter12 extends App {
       val self = this
       new Applicative[({type f[x] = F[G[x]]})#f] {
         override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+
         override def apply[A, B](fab: F[G[A => B]])(fa: F[G[A]]): F[G[B]] =
           self.map2(fab, fa)((f, a) => G.map2(f, a)((ff, aa) => ff(aa)))
       }
@@ -195,7 +198,6 @@ object Chapter12 extends App {
   }
 
   object Traverse {
-
     // 12.13
     val listTraverse = new Traverse[List] {
       def traverse[G[_] : Applicative, A, B](fa: List[A])(f: A => G[B])(implicit G: Applicative[G]): G[List[B]] =
@@ -213,6 +215,24 @@ object Chapter12 extends App {
       def traverse[G[_] : Applicative, A, B](fa: Tree[A])(f: A => G[B])(implicit G: Applicative[G]): G[Tree[B]] =
         G.map2(f(fa.head), listTraverse.traverse(fa.tail)(x => traverse(x)(f)))((h, t) => Tree(h, t))
     }
+  }
+
+  // 12.14
+  trait Traverse_1[F[_]] extends Functor[F] {
+    def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B])(implicit G: Applicative[G]): G[F[B]] =
+      sequence(map(fa)(f))
+
+    def sequence[G[_], A](fga: F[G[A]])(implicit G: Applicative[G]): G[F[A]] =
+      traverse(fga)(ga => ga)
+
+    type Id[A] = A
+    val idMonad = new Applicative[Id] {
+      override def unit[A](a: => A) = a
+      def flatMap[A, B](ma: Id[A])(f: A => Id[B]) = f(ma)
+    }
+
+    def map[A, B](fa: F[A])(f: A => B): F[B] =
+      traverse[Id, A, B](fa)(f)(idMonad, idMonad)
   }
 
   // The `get` and `set` functions on `State` are used above,
