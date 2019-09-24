@@ -16,3 +16,4 @@ The answers by the authors of the book can be found at: https://github.com/fpins
 10. Monoids
 11. Monads
 12. Applicatives and Traversable Functors
+13. External Effects and I/O
