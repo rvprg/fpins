@@ -20,6 +20,16 @@ object Chapter9 extends App {
     def many1[A](p: Parser[A]): Parser[List[A]] =
       map2(p, many(p))(_ :: _)
 
+    // 9.2
+    // product(p1, product(p2, p3)) and product(product(p1, p2), p3) would
+    // parse the string equally.
+
+    // 9.3
+    def many_0[A](p: Parser[A]): Parser[List[A]] =
+      or(succeed[List[A]](List()), map2(p, many(p))(_ :: _))
+
+    def succeed[A](a: A): Parser[A] = map(string("")) (_ => a)
+
     def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
     implicit def string(s: String): Parser[String]
     implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
