@@ -28,6 +28,10 @@ object Chapter9 extends App {
     def many_0[A](p: Parser[A]): Parser[List[A]] =
       or(succeed[List[A]](List()), map2(p, many(p))(_ :: _))
 
+    // 9.4
+    def listOfN[A](n: Int, p: Parser[A]): Parser[List[A]] =
+      map2(p, (if (n > 0) listOfN[A](n-1, p) else succeed[List[A]](List())))(_ :: _)
+
     def succeed[A](a: A): Parser[A] = map(string("")) (_ => a)
 
     def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
