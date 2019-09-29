@@ -40,6 +40,12 @@ object Chapter9 extends App {
     // 9.6
     def parser = flatMap("[0-9]+".r)(v => listOfN(v.toInt, string("a")))
 
+    // 9.7
+    def map2_flatMap[A, B, C](p: Parser[A], p2: Parser[B])(f: (A,B) => C): Parser[C] =
+      flatMap(p)(x => map(p2)(y => f(x, y)))
+    def product_map2[A, B](p: Parser[A], p2: Parser[B]): Parser[(A, B)] =
+      map2_flatMap(p, p2)((_, _))
+
     def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
     implicit def regex(r: Regex): Parser[String]
     implicit def string(s: String): Parser[String]
