@@ -1,6 +1,7 @@
 import Chapter8.{Gen, Prop}
 
 import language.higherKinds
+import scala.util.matching.Regex
 
 object Chapter9 extends App {
 
@@ -34,7 +35,13 @@ object Chapter9 extends App {
 
     def succeed[A](a: A): Parser[A] = map(string("")) (_ => a)
 
+    def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B]
+
+    // 9.6
+    def parser = flatMap("[0-9]+".r)(v => listOfN(v.toInt, string("a")))
+
     def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
+    implicit def regex(r: Regex): Parser[String]
     implicit def string(s: String): Parser[String]
     implicit def operators[A](p: Parser[A]) = ParserOps[A](p)
     implicit def asStringParser[A](a: A)(implicit f: A => Parser[String]):
