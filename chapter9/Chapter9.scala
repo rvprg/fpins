@@ -46,6 +46,12 @@ object Chapter9 extends App {
     def product_map2[A, B](p: Parser[A], p2: Parser[B]): Parser[(A, B)] =
       map2_flatMap(p, p2)((_, _))
 
+    //9.8
+    def map_flatMap_1[A, B](p: Parser[A], f: A => B): Parser[B] =
+      map2(p, p)((x, _) => f(x))
+    def map_flatMap_2[A, B](p: Parser[A], f: A => B): Parser[B] =
+      flatMap(p)(x => succeed(f(x)))
+
     def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
     implicit def regex(r: Regex): Parser[String]
     implicit def string(s: String): Parser[String]
